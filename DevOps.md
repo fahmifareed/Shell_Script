@@ -39,125 +39,84 @@ Follow the steps in the official Jenkins installation documentation to install J
 
  
 
-***\*docker run -d -p 8081:8081 sonatype/nexus3\**** 
+docker run -d -p 8081:8081 sonatype/nexus3
 
-***\*Trivy Installation on Jenkins Documentation\**** 
+## Trivy Installation on Jenkins Documentation
 
 1. Install required dependencies: 
 
  
-
-***\*sudo apt-get install wget apt-transport-https gnupg lsb-release\**** 
+sudo apt-get install wget apt-transport-https gnupg lsb-release
 
 2. Add Trivy GPG key: 
 
- 
-
-***\*wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null\**** 
+wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | gpg --dearmor | sudo tee /usr/share/keyrings/trivy.gpg > /dev/null
 
 3. Add Trivy repository: 
 
- 
-
-***\*echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list\**** 
+echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
 
 4. Update package list: 
 
- 
-
-***\*sudo apt-get update\**** 
+ sudo apt-get update
 
 5. Install Trivy: 
 
- 
+sudo apt-get install trivy -y
 
-***\*sudo apt-get install trivy -y\**** 
+## Kubernetes Setup Documentation
 
-***\*Kubernetes Setup Documentation\**** 
-
-***\*On Master and Worker Nodes\**** 
+# *On Master and Worker Nodes*
 
 1. Update and install Docker: 
 
- 
-
-***\*sudo apt-get update -y\**** 
-
-***\*sudo apt-get install docker.io -y\**** 
-
-***\*sudo service docker restart\**** 
+ sudo apt-get update -y
+sudo apt-get install docker.io -y
+sudo service docker restart
 
 2. Add Kubernetes repository: 
 
- 
-
-***\*sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -\**** 
-
-***\*echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >/etc/apt/sources.list.d/kubernetes.list\**** 
-
-***\*sudo apt-get update\**** 
+sudo curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" >/etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
 
 3. Install Kubernetes components: 
 
- 
+sudo apt install kubeadm=1.20.0-00 kubectl=1.20.0-00 kubelet=1.20.0-00 -y
 
-***\*sudo apt install kubeadm=1.20.0-00 kubectl=1.20.0-00 kubelet=1.20.0-00 -y\**** 
-
-***\*On Master Node\**** 
+# On Master Node 
 
 1. Initialize Kubernetes with a pod network CIDR: 
 
- 
-
-***\*kubeadm init --pod-network-cidr=192.168.0.0/16\**** 
+kubeadm init --pod-network-cidr=192.168.0.0/16
 
 2. Set up kubeconfig: 
 
- 
-
-***\*mkdir -p $HOME/.kube\**** 
-
-***\*sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config\**** 
-
-***\*sudo chown $(id -u):$(id -g) $HOME/.kube/config\**** 
+ mkdir -p $HOME/.kube
+sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
+sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
 3. Apply network plugins: 
 
- 
+ kubectl apply -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.49.0/deploy/static/provider/baremetal/deploy.yaml
 
-***\*kubectl apply -f https://docs.projectcalico.org/v3.20/manifests/calico.yaml\**** 
+# Create Service Account, Role, Bind Role, Createtoken for service account
+## Creating Service Account
 
-***\*kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.49.0/deploy/static/provider/baremetal/deploy.yaml\**** 
-
-***\*Create Service Account, Role, Bind Role, Createtoken for service account\**** 
-
-***\*Creating Service Account\**** 
-
-***\*apiVersion: v1\**** 
-
-***\*kind: ServiceAccount\**** 
-
-***\*metadata:\**** 
-
+apiVersion: v1
+kind: ServiceAccount
+metadata: 
 name: jenkins 
-
 namespace: webapps 
-
-***\*Create Role\**** 
-
-***\*apiVersion: rbac.authorization.k8s.io/v1\**** 
-
-***\*kind: Role\**** 
-
-***\*metadata:\**** 
-
+Create Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
 name: app-role 
-
 namespace: webapps 
-
-***\*rules:\**** 
-
-\- apiGroups: 
+rules:
+apiGroups: 
 
 \- "" 
 
@@ -219,85 +178,49 @@ resources:
 
 verbs: ["get", "list", "watch", "create", "update", "patch", "delete"] 
 
-***\*Bind the role to service account\**** 
-
-***\*apiVersion: rbac.authorization.k8s.io/v1\**** 
-
-***\*kind: RoleBinding\**** 
-
-***\*metadata:\**** 
-
+# Bind the role to service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
 name: app-rolebinding 
-
-***\*namespace: webapps\**** 
-
-***\*roleRef:\**** 
-
-***\*apiGroup: rbac.authorization.k8s.io\**** 
-
+namespace: webapps
+roleRef:
+apiGroup: rbac.authorization.k8s.io
 kind: Role 
-
 name: app-role 
-
-***\*subjects:\**** 
-
-***\*- namespace: webapps\**** 
-
+subjects:
+namespace: webapps
 kind: ServiceAccount 
-
 name: jenkins 
 
-***\*Generate token using service account in the namespace\**** 
+*Generate token using service account in the namespace*
 
 Create Token 
 
-***\*Jenkins Pipeline Documentation\**** 
-
-***\*ppipeline {\**** 
-
+# Jenkins Pipeline Documentation
+ppipeline {
 agent any 
-
 tools { 
-
 maven 'maven3' 
-
 jdk 'jdk17' 
-
 } 
-
 environment { 
-
-***\*SCANNER_HOME= tool 'sonar-scanner'\**** 
-
+SCANNER_HOME= tool 'sonar-scanner'
 } 
-
 stages { 
-
-***\*stage('Git Checkout') {\**** 
-
+stage('Git Checkout') {
 steps { 
-
-***\*git branch: 'main', url: 'https://github.com/jaiswaladi246/Ekart.git'\**** 
-
+git branch: 'main', url: 'https://github.com/jaiswaladi246/Ekart.git'
 } 
-
 } 
-
-***\*stage('Compile') {\**** 
-
+stage('Compile') {
 steps { 
-
 sh "mvn compile" 
-
 } 
-
 } 
-
-***\*stage('Unit Tests') {\**** 
-
+stage('Unit Tests') {
 steps { 
-
-***\*sh "mvn test -DskipTests=true"\**** 
+sh "mvn test -DskipTests=true"
 
 } 
 
