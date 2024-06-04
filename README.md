@@ -6,15 +6,15 @@
 
 ```bash
 #Including 2 files
-CentOS_Check_Script.sh
+user.sh
 README.txt
 ```
 
 **Instructions**
 
 ```bash
-#Execute CentOS-Check_script.sh script file for inspection, the command format is as follows
-sudo sh CentOS_Check_Script.sh | tee check_date+%Y%m%d_%H%M%S.txt
+#Execute user.sh script file for inspection, the command format is as follows
+sudo sh user.sh | tee check_date+%Y%m%d_%H%M%S.txt
 ```
 
 **Inspection instructions*
@@ -47,8 +47,8 @@ README.txt
 **Instructions**
 
 ```bash
-#Execute CentOS_protective_script.sh script file for reinforcement, the command format is as follows
-sudo sh CentOS_Protective_Script.sh
+#Execute user.sh script file for reinforcement, the command format is as follows
+sudo sh user.sh
 #After the execution is complete, press the script to prompt to restart the corresponding service
 ```
 
